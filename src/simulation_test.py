@@ -6,7 +6,7 @@ gamma1 = 0.5  # rate of state transition from ON to OFF
 gamma2 = 0.1  # rate of state transition from OFF to ON
 runtime = 1000  # total simulation time
 
-simulator = SingleServerIPP(lambda_on=intensity, gamma1=gamma1, gamma2=gamma2)
+simulator = SingleServerIPP(lambda_on=intensity, omega1=gamma1, omega2=gamma2)
 arrivals = simulator.run(run_time=runtime)
 
 # some plots
