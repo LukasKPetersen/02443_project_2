@@ -66,7 +66,7 @@ class IPPServers:
         while self.departure_heap and self.departure_heap[0] <= t:
             heapq.heappop(self.departure_heap)
 
-        queue_length = max(0, len(self.departure_heap) - self.num_servers)
+        queue_length = max(0, len(self.departure_heap) - np.sum(self.server_busy_until > t))
         
         if np.all(self.server_busy_until > t) and queue_length >= self.queue_capacity:
             event = {
@@ -84,16 +84,17 @@ class IPPServers:
         departure_time = start_time + service_time
         self.server_busy_until[i_soonest] = departure_time
 
+        heapq.heappush(self.departure_heap, departure_time)
         event = {
             **arrival,
             'server_id': i_soonest,
             'start_service': start_time,
             'departure': departure_time,
             'waiting_time': start_time - t,
-            'queue_length': max(0, len(self.departure_heap) - self.num_servers),
-            'blocked': False
+            'queue_length': max(0, len(self.departure_heap) - np.sum(self.server_busy_until > t)),
+            'blocked': False,
+            'num_in_system': len(self.departure_heap)
         }
-        heapq.heappush(self.departure_heap, departure_time)
         return event
 
 class MultiIPP:
@@ -136,7 +137,7 @@ class MultiIPP:
 def test_MultiIPP():
     print('=== test_MultiIPP ===')
     np.random.seed(42)
-    mipp = MultiIPP(num_sources=3, lambda_on=3, omega_on=1.5, omega_off=0.5, num_servers=2, mu=2, queue_capacity=1)
+    mipp = MultiIPP(num_sources=3, lambda_on=3, omega_on=1.5, omega_off=0.5, num_servers=1, mu=2, queue_capacity=np.inf)
     mipp.simulate_until(100)
     
     df = pd.DataFrame(mipp.event_log)
