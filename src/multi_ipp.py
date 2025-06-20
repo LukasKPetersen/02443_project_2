@@ -63,8 +63,7 @@ class IPPServers:
 
     def handle_arrival(self, arrival):
         t = arrival['time']
-        while self.departure_heap and self.departure_heap[0] <= t:
-            heapq.heappop(self.departure_heap)
+        self.update_heap(t)
 
         queue_length = max(0, len(self.departure_heap) - np.sum(self.server_busy_until > t))
         
@@ -97,6 +96,14 @@ class IPPServers:
         }
         return event
 
+    def update_heap(self, time):
+        while self.departure_heap and self.departure_heap[0] <= time:
+            heapq.heappop(self.departure_heap)
+    
+    def get_num_in_system(self, time):
+        self.update_heap(time)
+        return len(self.departure_heap)
+
 class MultiIPP:
     """Multiple IPPs in parallel with multiple servers handling the arrivals. Supports infinite, finite, and no waiting room for queue."""
     def __init__(self, num_sources, lambda_on, omega_on, omega_off, num_servers, mu, queue_capacity=np.inf):
@@ -125,8 +132,16 @@ class MultiIPP:
         self.global_time = 0
         self.event_log = []
 
-    def simulate_until(self, time_end):
-        future_events = []
+    def simulate_until(self, time_end, peek_times=None):
+        """
+        time_end: how long to simulate
+        peek_times: array of times to peek at the system. Currenly observes 'num_in_system'.
+        """
+        if peek_times is None:
+            future_events = []
+        else:
+            future_events = [{'time': t, 'event': 'peek'} for t in peek_times]
+        
         for src in self.sources:
             future_events += src.step()
 
@@ -143,6 +158,8 @@ class MultiIPP:
             elif event['event'] == 'state_change':
                 src = self.sources[event['source_id']]
                 future_events += src.step()
+            elif event['event'] == 'peek':
+                event['num_in_system'] = self.servers.get_num_in_system(event['time'])
             
             self.event_log.append(event)
 
