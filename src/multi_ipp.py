@@ -6,6 +6,25 @@ import pandas as pd
 import heapq
 
 
+class CachedRVWrapper:
+    def __init__(self, rv, cache_size=1000):
+        self.rv = rv
+        self.cache_size = cache_size
+        self.reset()
+
+    def reset(self):
+        """Reset the cache and index."""
+        self.cache = self.rv.rvs(size=self.cache_size)
+        self.index = 0
+
+    def rvs(self):
+        if self.index >= self.cache_size:
+            self.reset()
+            
+        result = self.cache[self.index]
+        self.index += 1
+        return result
+
 class IPPSource:
     """Single IPP source for MultiIPP."""
     def __init__(self, lambda_on, omega_on, omega_off, source_id):
@@ -15,10 +34,10 @@ class IPPSource:
         self.state = False # False -> 'OFF', True -> 'ON'
         self.time = 0
         self.source_id = source_id
-        self.arrival_dist = sps.expon(scale=1/lambda_on)
+        self.arrival_dist = CachedRVWrapper(sps.expon(scale=1/lambda_on))
         self.sojourn_dists = {
-            True: sps.expon(scale=1/omega_on),
-            False: sps.expon(scale=1/omega_off)
+            True: CachedRVWrapper(sps.expon(scale=1/omega_on)),
+            False: CachedRVWrapper(sps.expon(scale=1/omega_off))
         }
         self.event_log = []
 
