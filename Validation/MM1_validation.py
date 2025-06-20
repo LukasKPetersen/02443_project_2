@@ -7,7 +7,7 @@ from tqdm import tqdm
 import sys
 sys.path.insert(1, '../src')
 import multi_ipp as MPP
-
+from scipy.stats import kstest
 # --- Theoretical M/M/1 PMF function ---
 def mm1_pmf(k, t, i, lam, mu, summation_terms=100):
     k = np.atleast_1d(k)
@@ -43,7 +43,7 @@ def run_simulation(n_runs, sim_time, bin_width, lam, mu, omega_on=1, omega_off=1
         # Drop NA values
         mask = ~df['num_in_system'].isna()
         times = df['time'].values[mask]
-        num_in_system = df['num_in_system'].values[mask].astype(int)  # Convert nullable Int to int
+        num_in_system = df['num_in_system'].values[mask].astype(int)-1  # Convert nullable Int to int
 
         # Bin times and accumulate queue lengths
         bin_indices = np.digitize(times, bins) - 1  # 0-indexed
@@ -77,7 +77,7 @@ def plot_comparison(bin_centers, empirical_dists, lam, mu, i=0, selected_bins=[5
         bar_width = 0.8
 
         # Plot empirical histogram as bars
-        plt.bar(k_vals-1, empirical, width=bar_width, color='skyblue', alpha=0.7, label='Empirical')
+        plt.bar(k_vals, empirical, width=bar_width, color='skyblue', alpha=0.7, label='Empirical')
 
         # Plot theoretical as dashed line with markers
         plt.plot(k_vals, theoretical, 'C1--', marker='x', label='Theoretical (M/M/1)', linewidth=1.5)
@@ -93,16 +93,30 @@ def plot_comparison(bin_centers, empirical_dists, lam, mu, i=0, selected_bins=[5
 
 
 # --- Parameters ---
-n_runs = 1000
-sim_time = 100
-bin_width = 1.0
-omega_on = 1  # IPP lambda
-omega_off = 1e8    # IPP mu
+p_vals=[]
+for _ in range(20):
+    n_runs = 100
+    sim_time = 100
+    bin_width = 1.0
+    omega_on = 1  # IPP lambda
+    omega_off = 1e10    # IPP mu
 
-lam_mm1 = 1
-mu_mm1 = 0.5
+    lam_mm1 = 1
+    mu_mm1 = 2
 
-# --- Run Everything ---
-queue_hist, bin_centers = run_simulation(n_runs, sim_time, bin_width,lam_mm1,mu_mm1)
-empirical_dists = build_empirical_dists(queue_hist)
-plot_comparison(bin_centers, empirical_dists, lam=lam_mm1, mu=mu_mm1, i=0, selected_bins=[15,30,45,60,75,90])
+    # --- Run Everything ---
+    queue_hist, bin_centers = run_simulation(n_runs, sim_time, bin_width,lam_mm1,mu_mm1)
+    empirical_dists = build_empirical_dists(queue_hist)
+    #plot_comparison(bin_centers, empirical_dists, lam=lam_mm1, mu=mu_mm1, i=0, selected_bins=[15,30,45,60,75,90])
+    pmf_emp=empirical_dists[15]
+    k_vals = np.arange(len(empirical_dists[1]))
+    pmf_theo=mm1_pmf(k_vals,15,0,lam_mm1,mu_mm1)
+    N=n_runs
+    obs=pmf_emp*N
+    theo=pmf_theo*N
+    stat,p_value=kstest(obs,theo)
+    p_vals.append(p_value)
+plt.hist(p_vals)
+plt.savefig("p_value_dist")
+plt.show()
+print(p_value)
