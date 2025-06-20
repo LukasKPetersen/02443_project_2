@@ -107,7 +107,20 @@ class MultiIPP:
         omega_off: transition rate from 'OFF' to 'ON'
         mu: service rate
         """
-        self.sources = [IPPSource(lambda_on, omega_on, omega_off, i) for i in range(num_sources)]
+        # for the sources:allow for passing different rate parameters as array while
+        # still being able to pass a scalar to have them constant
+        def scalar_to_full_array(scalar, size):
+            if not isinstance(scalar, np.ndarray) or scalar.size == 1:
+                return np.full(size, scalar)
+        lambda_on = scalar_to_full_array(lambda_on, num_sources)
+        omega_on = scalar_to_full_array(omega_on, num_sources)
+        omega_off = scalar_to_full_array(omega_off, num_sources)
+        
+        assert lambda_on.size == num_sources
+        assert omega_on.size == num_sources
+        assert omega_off.size == num_sources
+        
+        self.sources = [IPPSource(lambda_on[i], omega_on[i], omega_off[i], i) for i in range(num_sources)]
         self.servers = IPPServers(num_servers, mu, queue_capacity)
         self.global_time = 0
         self.event_log = []
@@ -137,7 +150,7 @@ class MultiIPP:
 def test_MultiIPP():
     print('=== test_MultiIPP ===')
     np.random.seed(42)
-    mipp = MultiIPP(num_sources=3, lambda_on=3, omega_on=1.5, omega_off=0.5, num_servers=1, mu=2, queue_capacity=np.inf)
+    mipp = MultiIPP(num_sources=5, lambda_on=3, omega_on=1.5, omega_off=0.5, num_servers=2, mu=2, queue_capacity=3)
     mipp.simulate_until(100)
     
     df = pd.DataFrame(mipp.event_log)
