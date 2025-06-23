@@ -36,9 +36,9 @@ for param_name, values in param_ranges.items():
     print(f"\nRunning sensitivity analysis for {param_name}...")
     
     # We iterate over the values to be compared
-    for value in tqdm(values):
+    for param_val in tqdm(values):
         config = base_config.copy()
-        config[param_name] = value
+        config[param_name] = param_val
         
         # Set up the simulator
         mipp = MultiIPP(
@@ -53,16 +53,16 @@ for param_name, values in param_ranges.items():
         # We run the simulation
         mipp.simulate_until(config['simulation_time'])
         
-        # Read metrics from the simulation log
+        # Read metrics from the simulation log (filter for arrivals only)
         df = pd.DataFrame(mipp.event_log)
         arrival_events = df[df['event'] == 'arrival']
         
         # Store the result
         results[param_name].append({
-            'value': value,
-            'blocking_prob': arrival_events['blocked'].mean()      if 'blocked'      in arrival_events else 0,
-            'avg_queue':     arrival_events['queue_length'].mean() if 'queue_length' in arrival_events else 0,
-            'avg_wait':      arrival_events['waiting_time'].mean() if 'waiting_time' in arrival_events else 0,
+            'param_val': param_val,
+            'blocking_prob': arrival_events['blocked'].mean() if 'blocked' in arrival_events else 0,
+            'avg_queue': arrival_events['queue_length'].mean(),
+            'avg_wait': arrival_events['waiting_time'].mean()
         })
 
 # We plot the results
@@ -71,9 +71,9 @@ for param_name, data in results.items():
     fig, ax = plt.subplots(figsize=(12, 6))
     fig.suptitle(f'Sensitivity Analysis: {param_name}', fontsize=36)
 
-    ax.plot(df['value'], df['blocking_prob'], 'o-', label='Blocking Probability')
-    ax.plot(df['value'], df['avg_queue'], 's-', label='Average Queue Length')
-    ax.plot(df['value'], df['avg_wait'], '^-', label='Average Waiting Time')
+    ax.plot(df['param_val'], df['blocking_prob'], 'o-', label='Blocking Probability')
+    ax.plot(df['param_val'], df['avg_queue'], 's-', label='Average Queue Length')
+    ax.plot(df['param_val'], df['avg_wait'], '^-', label='Average Waiting Time')
 
     ax.set_xlabel(param_name, fontsize=20)
     ax.set_ylabel('Metric Value', fontsize=20)
