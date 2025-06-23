@@ -5,6 +5,8 @@ OMEGA_ON = 0.8  # state change rate from ON to OFF
 OMEGA_OFF = 0.2  # state change rate from OFF to ON
 ARRIVAL_TO_SERVICE_RATE_RATIO = 10/9
 QUEUE_CAPACITY = 30  # maximum number of jobs in the queue
+HORIZON = 4000
+BURN_IN = 100  # initial time to ignore for steady state
 
 
 def get_hyp_exp_params(omega_on, omega_off, lambda_on):
