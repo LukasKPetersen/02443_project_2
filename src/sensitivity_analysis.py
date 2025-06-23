@@ -5,7 +5,9 @@ import pandas as pd
 from tqdm import tqdm
 
 from multi_ipp import MultiIPP
-    
+
+np.random.seed(42)
+
 # We set the analysis base configuration
 base_config = {
     'num_sources': 5,
@@ -20,11 +22,11 @@ base_config = {
 
 # We define the ranges for the sensitivity analysis
 param_ranges = {
-    'lambda_on':        np.linspace(0.1, 10, 10),
-    'omega_on':         np.linspace(0.1, 10, 10),
-    'omega_off':        np.linspace(0.1, 6, 10),
-    'num_servers':      range(1, 8, 2),
-    'mu':               np.linspace(0.1, 5, 10),
+    'lambda_on':        np.linspace(0.01, 10, 10),
+    'omega_on':         np.linspace(0.01, 10, 10),
+    'omega_off':        np.linspace(0.01, 6, 10),
+    'num_servers':      range(1, 8),
+    'mu':               np.linspace(0.01, 5, 10),
     'queue_capacity':   [1, 2, 3, 5, 10, 20, np.inf]
 }
 
@@ -70,24 +72,18 @@ for param_name, values in param_ranges.items():
 # We plot the results
 for param_name, data in results.items():
     df = pd.DataFrame(data)
-    fig, axes = plt.subplots(3, 1, figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(12, 6))
     fig.suptitle(f'Sensitivity Analysis: {param_name}')
-    
-    # Blocking probability
-    axes[0].plot(df['value'], df['blocking_prob'], 'o-')
-    axes[0].set_title('Blocking Probability')
-    axes[0].grid(True)
-    
-    # The queue length
-    axes[1].plot(df['value'], df['avg_queue'], 'o-')
-    axes[1].set_title('Average Queue Length')
-    axes[1].grid(True)
-    
-    # The average waiting time
-    axes[2].plot(df['value'], df['avg_wait'], 'o-')
-    axes[2].set_title('Average Waiting Time')
-    axes[2].set_xlabel(param_name)
-    axes[2].grid(True)
-    
+
+    ax.plot(df['value'], df['blocking_prob'], 'o-', label='Blocking Probability')
+    ax.plot(df['value'], df['avg_queue'], 's-', label='Average Queue Length')
+    ax.plot(df['value'], df['avg_wait'], '^-', label='Average Waiting Time')
+
+    ax.set_xlabel(param_name)
+    ax.set_ylabel('Metric Value')
+    ax.grid(True)
+    ax.legend()
+
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f'./graphics/sensitivity_{param_name}.png')
+    plt.close(fig)
