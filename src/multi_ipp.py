@@ -77,7 +77,7 @@ class IPPServers:
         self.mu = mu
         self.server_busy_until = np.zeros(num_servers)
         self.departure_heap = []
-        self.service_dist = sps.expon(scale=1/mu)
+        self.service_dist = CachedRVWrapper(sps.expon(scale=1/mu))
         self.queue_capacity = queue_capacity
 
     def handle_arrival(self, arrival):
@@ -151,26 +151,33 @@ class MultiIPP:
         self.global_time = 0
         self.event_log = []
 
-    def simulate_until(self, time_end, peek_times=None):
+    def simulate_until(self, time_end, peek_times=None, verbose=False):
         """
         time_end: how long to simulate
         peek_times: array of times to peek at the system. Currenly observes 'num_in_system'.
         """
         if peek_times is None:
-            future_events = []
+            peek_events = []
         else:
-            future_events = [{'time': t, 'event': 'peek'} for t in peek_times]
-        
-        for src in self.sources:
-            future_events += src.step()
+            peek_events = [{'time': t, 'event': 'peek'} for t in peek_times]
+        peek_idx = 0
+
+        future_events = [] if peek_times is None else [peek_events[peek_idx]]
+
+        if self.global_time == 0:
+            for src in self.sources:
+                future_events += src.step()
+
+        if verbose:
+            bar = tqdm(total=time_end, desc='Simulating MultiIPP', unit='s', leave=False)
+            
 
         while future_events:
             future_events.sort(key=lambda e: e['time'])
             event = future_events.pop(0)
             self.global_time = event['time']
-
-            if self.global_time > time_end:
-                break
+            if verbose:
+                bar.update(int(min(self.global_time, time_end) -  bar.n))
 
             if event['event'] == 'arrival':
                 event = self.servers.handle_arrival(event)
@@ -179,7 +186,13 @@ class MultiIPP:
                 future_events += src.step()
             elif event['event'] == 'peek':
                 event['num_in_system'] = self.servers.get_num_in_system(event['time'])
-            
+                peek_idx += 1
+                if peek_idx < len(peek_events):
+                    future_events.append(peek_events[peek_idx])
+
+            if self.global_time > time_end:
+                break
+
             self.event_log.append(event)
 
 
