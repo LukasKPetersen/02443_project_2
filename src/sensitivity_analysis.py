@@ -15,8 +15,8 @@ base_config = {
     'omega_on': 1.5,
     'omega_off': 0.5,
     'num_servers': 2,
-    'mu': 2,
-    'queue_capacity': 3,
+    'mu': 1,
+    'queue_capacity': 6,
     'simulation_time': 1000
 }
 
@@ -27,7 +27,7 @@ param_ranges = {
     'omega_off':        np.linspace(0.01, 6, 10),
     'num_servers':      range(1, 8),
     'mu':               np.linspace(0.01, 5, 10),
-    'queue_capacity':   [1, 2, 3, 5, 10, 20, np.inf]
+    'queue_capacity':   [0, 1, 2, 3, 5, 7, 10, 20, np.inf]
 }
 
 # Run sensitivity analysis for each parameter and save the results
@@ -61,25 +61,32 @@ for param_name, values in param_ranges.items():
         results[param_name].append({
             'param_val': param_val,
             'blocking_prob': arrival_events['blocked'].mean() if 'blocked' in arrival_events else 0,
-            'avg_queue': arrival_events['queue_length'].mean(),
             'avg_wait': arrival_events['waiting_time'].mean()
         })
 
 # We plot the results
 for param_name, data in results.items():
     df = pd.DataFrame(data)
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig, axL = plt.subplots(figsize=(12, 6))
     fig.suptitle(f'Sensitivity Analysis: {param_name}', fontsize=36)
 
-    ax.plot(df['param_val'], df['blocking_prob'], 'o-', label='Blocking Probability')
-    ax.plot(df['param_val'], df['avg_queue'], 's-', label='Average Queue Length')
-    ax.plot(df['param_val'], df['avg_wait'], '^-', label='Average Waiting Time')
+    # Left y-axis for avg_wait
+    axL.plot(df['param_val'], df['avg_wait'], '^-', label='Average Waiting Time')
+    axL.set_xlabel(param_name, fontsize=20)
+    axL.set_ylabel('Average Waiting Time', fontsize=20)
+    axL.tick_params(axis='both', labelsize=18)
+    axL.grid(True)
 
-    ax.set_xlabel(param_name, fontsize=20)
-    ax.set_ylabel('Metric Value', fontsize=20)
-    ax.tick_params(axis='both', labelsize=18)
-    ax.grid(True)
-    ax.legend(fontsize=18)
+    # Right y-axis for blocking_prob
+    axR = axL.twinx()
+    axR.plot(df['param_val'], df['blocking_prob'], 'o-', color='tab:red', label='Blocking Probability')
+    axR.set_ylabel('Blocking Probability', fontsize=20, color='tab:red')
+    axR.tick_params(axis='y', labelsize=18, colors='tab:red')
+
+    # Legends
+    lines_1, labels_1 = axL.get_legend_handles_labels()
+    lines_2, labels_2 = axR.get_legend_handles_labels()
+    axL.legend(lines_1 + lines_2, labels_1 + labels_2, fontsize=18)
 
     plt.tight_layout()
     plt.savefig(f'./graphics/sensitivity_{param_name}.png')
