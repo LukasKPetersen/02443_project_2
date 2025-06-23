@@ -57,17 +57,13 @@ for param_name, values in param_ranges.items():
         df = pd.DataFrame(mipp.event_log)
         arrival_events = df[df['event'] == 'arrival']
         
-        if not arrival_events.empty:
-            blocking_prob = arrival_events['blocked'].mean() if 'blocked' in arrival_events else 0
-            avg_queue = arrival_events['queue_length'].mean() if 'queue_length' in arrival_events else 0
-            avg_wait = arrival_events['waiting_time'].mean() if 'waiting_time' in arrival_events else 0
-            
-            results[param_name].append({
-                'value': value,
-                'blocking_prob': blocking_prob,
-                'avg_queue': avg_queue,
-                'avg_wait': avg_wait,
-            })
+        # Store the result
+        results[param_name].append({
+            'value': value,
+            'blocking_prob': arrival_events['blocked'].mean()      if 'blocked'      in arrival_events else 0,
+            'avg_queue':     arrival_events['queue_length'].mean() if 'queue_length' in arrival_events else 0,
+            'avg_wait':      arrival_events['waiting_time'].mean() if 'waiting_time' in arrival_events else 0,
+        })
 
 # We plot the results
 for param_name, data in results.items():
