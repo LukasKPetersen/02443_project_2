@@ -3,7 +3,8 @@ NUM_SERVERS = 1
 LAMBDA_ON = 2  # arrival rate when the source is ON
 OMEGA_ON = 0.8  # state change rate from ON to OFF
 OMEGA_OFF = 0.2  # state change rate from OFF to ON
-ARRIVAL_TO_SERVICE_RATE_RATIO = 10/9  # ratio of arrival rate to service rate
+ARRIVAL_TO_SERVICE_RATE_RATIO = 10/9
+QUEUE_CAPACITY = 30  # maximum number of jobs in the queue
 
 
 def get_hyp_exp_params(omega_on, omega_off, lambda_on):
