@@ -5,18 +5,28 @@ import pandas as pd
 from tqdm import tqdm
 
 from multi_ipp import MultiIPP
+from params import get_hyp_exp_params
 
 np.random.seed(42)
 
 # We set the analysis base configuration
+lambda_on = 2
+omega_on = 0.8
+omega_off = 0.2
+_, _, _, _, mean_inter_arrival_time = get_hyp_exp_params(omega_on, omega_off, lambda_on)
+
+beta = 1/mean_inter_arrival_time
+n = 4  # Number of sources
+m = 1  # Number of servers
+
 base_config = {
-    'num_sources': 5,
-    'lambda_on': 3,
-    'omega_on': 1.5,
-    'omega_off': 0.5,
-    'num_servers': 2,
-    'mu': 1,
-    'queue_capacity': 6,
+    'num_sources': n,
+    'lambda_on': lambda_on,
+    'omega_on': omega_on,
+    'omega_off': omega_off,
+    'num_servers': m,
+    'mu': (10/9*n)/(beta*m),
+    'queue_capacity': 30,
     'simulation_time': 1000
 }
 
