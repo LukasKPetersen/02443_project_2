@@ -73,16 +73,17 @@ for param_name, values in param_ranges.items():
 for param_name, data in results.items():
     df = pd.DataFrame(data)
     fig, ax = plt.subplots(figsize=(12, 6))
-    fig.suptitle(f'Sensitivity Analysis: {param_name}')
+    fig.suptitle(f'Sensitivity Analysis: {param_name}', fontsize=36)
 
     ax.plot(df['value'], df['blocking_prob'], 'o-', label='Blocking Probability')
     ax.plot(df['value'], df['avg_queue'], 's-', label='Average Queue Length')
     ax.plot(df['value'], df['avg_wait'], '^-', label='Average Waiting Time')
 
-    ax.set_xlabel(param_name)
-    ax.set_ylabel('Metric Value')
+    ax.set_xlabel(param_name, fontsize=20)
+    ax.set_ylabel('Metric Value', fontsize=20)
+    ax.tick_params(axis='both', labelsize=18)
     ax.grid(True)
-    ax.legend()
+    ax.legend(fontsize=18)
 
     plt.tight_layout()
     plt.savefig(f'./graphics/sensitivity_{param_name}.png')
